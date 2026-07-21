@@ -44,8 +44,12 @@ public class RepositoryAnalysisService {
 
         // Maintenance
         maintenanceScore += calculateIssuesScore(repo.isHas_issues());
-        maintenanceScore += calculateActivityScore(repo); // updated call
+        maintenanceScore += calculateActivityScore(repo);
         maintenanceScore += calculateArchiveScore(repo.isArchived());
+        maintenanceScore += calculateLicenseScore(repo);
+
+        boolean hasActions = gitHubApiClient.hasGitHubActions(owner, repoName);
+        maintenanceScore += hasActions ? 10 : 0; // changed from 20 → 10
 
         int total =
                 documentationScore
@@ -59,7 +63,8 @@ public class RepositoryAnalysisService {
         List<String> recommendations = generateRecommendations(
                 repo,
                 documentationScore,
-                communityScore
+                communityScore,
+                hasActions
         );
 
         return new ScoreResponse(
@@ -252,22 +257,18 @@ public class RepositoryAnalysisService {
         long days = ChronoUnit.DAYS.between(lastPush, now);
 
         if (days <= 30) {
-            return 40;
+            return 30; // changed from 40 → 30
         }
 
         if (days <= 90) {
-            return 30;
+            return 20; // changed from 30 → 20
         }
 
         if (days <= 180) {
-            return 20;
+            return 10; // changed from 20 → 10
         }
 
-        if (days <= 365) {
-            return 10;
-        }
-
-        return 0;
+        return 0; // >180 days → 0
     }
 
     private int calculateArchiveScore(boolean archived) {
@@ -275,7 +276,16 @@ public class RepositoryAnalysisService {
         if (archived)
             return 0;
 
-        return 30;
+        return 20; // changed from 30 → 20
+    }
+
+    private int calculateLicenseScore(RepositoryResponse repo) {
+
+        if (repo.getLicense() == null) {
+            return 0;
+        }
+
+        return 10;
     }
 
     // ==========================================================
@@ -285,7 +295,8 @@ public class RepositoryAnalysisService {
     private List<String> generateRecommendations(
             RepositoryResponse repo,
             int documentationScore,
-            int communityScore) {
+            int communityScore,
+            boolean hasActions) {
 
         List<String> recommendations = new ArrayList<>();
 
@@ -303,6 +314,14 @@ public class RepositoryAnalysisService {
 
         if (!repo.isHas_wiki()) {
             recommendations.add("Enable GitHub Wiki for better documentation.");
+        }
+
+        if (repo.getLicense() == null) {
+            recommendations.add("Add an open-source license to clarify usage rights.");
+        }
+
+        if (!hasActions) {
+            recommendations.add("Add a GitHub Actions workflow for Continuous Integration (CI/CD).");
         }
 
         if (communityScore < 60) {

@@ -5,6 +5,7 @@ import com.gitinsight.backend.dto.GitHubUserResponse;
 import com.gitinsight.backend.dto.RepositoryResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.http.HttpStatusCode;
 
 @Component
 public class GitHubApiClient {
@@ -40,5 +41,22 @@ public class GitHubApiClient {
                 .retrieve()
                 .body(ReadmeResponse.class);
 
+    }
+
+    public boolean hasGitHubActions(String owner, String repo) {
+
+        try {
+            restClient.get()
+                    .uri("/repos/{owner}/{repo}/contents/.github/workflows",
+                            owner,
+                            repo)
+                    .retrieve()
+                    .body(String.class);
+
+            return true;
+
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
