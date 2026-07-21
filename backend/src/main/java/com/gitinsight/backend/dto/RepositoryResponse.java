@@ -1,5 +1,7 @@
 package com.gitinsight.backend.dto;
 
+import java.util.List;
+
 public class RepositoryResponse {
 
     private String name;
@@ -17,6 +19,9 @@ public class RepositoryResponse {
     private boolean archived;
     private boolean has_issues;
     private boolean has_wiki;
+
+    private List<String> topics;
+    private String pushed_at;
 
     public RepositoryResponse() {
     }
@@ -123,5 +128,21 @@ public class RepositoryResponse {
 
     public void setHas_wiki(boolean has_wiki) {
         this.has_wiki = has_wiki;
+    }
+
+    public List<String> getTopics() {
+        return topics;
+    }
+
+    public void setTopics(List<String> topics) {
+        this.topics = topics;
+    }
+
+    public String getPushed_at() {
+        return pushed_at;
+    }
+
+    public void setPushed_at(String pushed_at) {
+        this.pushed_at = pushed_at;
     }
 }

@@ -3,6 +3,8 @@ package com.gitinsight.backend.service;
 import java.util.Base64;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 
 import com.gitinsight.backend.client.GitHubApiClient;
 import com.gitinsight.backend.dto.ReadmeResponse;
@@ -32,6 +34,8 @@ public class RepositoryAnalysisService {
         // Documentation
         documentationScore += calculateReadmeScore(owner, repoName);
         documentationScore += calculateDescriptionScore(repo);
+        documentationScore += calculateTopicsScore(repo);
+        documentationScore += calculateWikiScore(repo);
 
         // Community
         communityScore += calculateStarsScore(repo.getStargazers_count());
@@ -40,7 +44,7 @@ public class RepositoryAnalysisService {
 
         // Maintenance
         maintenanceScore += calculateIssuesScore(repo.isHas_issues());
-        maintenanceScore += calculateActivityScore();
+        maintenanceScore += calculateActivityScore(repo); // updated call
         maintenanceScore += calculateArchiveScore(repo.isArchived());
 
         int total =
@@ -88,11 +92,6 @@ public class RepositoryAnalysisService {
         }
 
         String base64Content = readme.getContent();
-
-        if (base64Content == null) {
-            return 0;
-        }
-
         base64Content = base64Content.replaceAll("\\s", "");
 
         String decodedReadme;
@@ -132,14 +131,46 @@ public class RepositoryAnalysisService {
         int length = description.trim().length();
 
         if (length <= 20) {
-            return 20;
+            return 8;
         }
 
         if (length <= 60) {
-            return 35;
+            return 15;
         }
 
-        return 50;
+        return 20;
+    }
+
+    private int calculateTopicsScore(RepositoryResponse repo) {
+
+        if (repo.getTopics() == null) {
+            return 0;
+        }
+
+        int count = repo.getTopics().size();
+
+        if (count == 0) {
+            return 0;
+        }
+
+        if (count <= 2) {
+            return 8;
+        }
+
+        if (count <= 5) {
+            return 15;
+        }
+
+        return 20;
+    }
+
+    private int calculateWikiScore(RepositoryResponse repo) {
+
+        if (repo.isHas_wiki()) {
+            return 10;
+        }
+
+        return 0;
     }
 
     // ==========================================================
@@ -209,22 +240,34 @@ public class RepositoryAnalysisService {
         return 0;
     }
 
-    private int calculateActivityScore() {
+    private int calculateActivityScore(RepositoryResponse repo) {
 
-        /*
-         * TODO
-         *
-         * Later use:
-         * repo.getPushed_at()
-         *
-         * >12 months -> 0
-         * 6-12 months -> 10
-         * 3-6 months -> 20
-         * 1-3 months -> 30
-         * <30 days -> 40
-         */
+        if (repo.getPushed_at() == null) {
+            return 0;
+        }
 
-        return 40;
+        OffsetDateTime lastPush = OffsetDateTime.parse(repo.getPushed_at());
+        OffsetDateTime now = OffsetDateTime.now();
+
+        long days = ChronoUnit.DAYS.between(lastPush, now);
+
+        if (days <= 30) {
+            return 40;
+        }
+
+        if (days <= 90) {
+            return 30;
+        }
+
+        if (days <= 180) {
+            return 20;
+        }
+
+        if (days <= 365) {
+            return 10;
+        }
+
+        return 0;
     }
 
     private int calculateArchiveScore(boolean archived) {
@@ -252,6 +295,14 @@ public class RepositoryAnalysisService {
 
         if (repo.getDescription() == null || repo.getDescription().isBlank()) {
             recommendations.add("Add a meaningful repository description.");
+        }
+
+        if (repo.getTopics() == null || repo.getTopics().isEmpty()) {
+            recommendations.add("Add GitHub topics to improve repository discoverability.");
+        }
+
+        if (!repo.isHas_wiki()) {
+            recommendations.add("Enable GitHub Wiki for better documentation.");
         }
 
         if (communityScore < 60) {
@@ -295,6 +346,6 @@ public class RepositoryAnalysisService {
             return "D";
         }
 
-        retugit statusrn "F";
+        return "F";
     }
 }
