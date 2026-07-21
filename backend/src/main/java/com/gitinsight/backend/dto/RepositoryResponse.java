@@ -26,6 +26,11 @@ public class RepositoryResponse {
 
     private License license;
 
+    // ✅ New fields
+    private int size;
+    private String visibility;
+    private String created_at;
+
     public RepositoryResponse() {
     }
 
@@ -155,6 +160,31 @@ public class RepositoryResponse {
 
     public void setLicense(License license) {
         this.license = license;
+    }
+
+    // ✅ New getters and setters
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    public String getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
+    }
+
+    public String getCreated_at() {
+        return created_at;
+    }
+
+    public void setCreated_at(String created_at) {
+        this.created_at = created_at;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
